@@ -2,9 +2,9 @@
 pub enum StructureToken {
   Start,
   End,
-  Intro,
-  Outro,
-  Bridge,
-  Chorus,
-  Verse,
+  Intro(usize),
+  Outro(usize),
+  Bridge(usize),
+  Chorus(usize),
+  Verse(usize),
 }

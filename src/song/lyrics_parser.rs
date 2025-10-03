@@ -17,17 +17,18 @@ impl LyricsParser {
           .map(|str| str.to_lowercase())
           .collect();
 
+        let i = result.len();
         //order matters
         if split.contains(&"chorus".to_string()) {
-          result.push(StructureToken::Chorus);
+          result.push(StructureToken::Chorus(i));
         } else if split.contains(&"verse".to_string()) {
-          result.push(StructureToken::Verse);
+          result.push(StructureToken::Verse(i));
         } else if split.contains(&"intro".to_string()) {
-          result.push(StructureToken::Intro);
+          result.push(StructureToken::Intro(i));
         } else if split.contains(&"outro".to_string()) {
-          result.push(StructureToken::Outro);
+          result.push(StructureToken::Outro(i));
         } else if split.contains(&"bridge".to_string()) {
-          result.push(StructureToken::Bridge);
+          result.push(StructureToken::Bridge(i));
         }
       }
     }

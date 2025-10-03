@@ -26,15 +26,12 @@ fn main() {
   //thus skewing the results by decreasing the chances of End token appearing
   records.retain(|r| r.lyrics.len() <= 3000);
 
-  let mut chain = Chain::<StructureToken>::of_order(2);
+  let mut chain = Chain::<StructureToken>::of_order(1);
   for record in records {
     let structure = LyricsParser::get_structure(&record.lyrics);
-    if structure.len() == 2 {
+    //removing songs with overly detailed structure / or structure that contain a lot of pre-chorus post-chorus etc..
+    if structure.len() == 2 || structure.len() > 8 {
       continue;
-    }
-
-    if structure.len() > 100 {
-      println!("{:?}", record);
     }
 
     chain.feed(structure);
