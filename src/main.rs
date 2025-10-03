@@ -3,10 +3,10 @@ mod song;
 
 use crate::{
   dataset_parser::{Parser, ParserOptions},
-  song::{LyricsParser, StructureToken},
+  song::{LyricsParser, Song},
 };
 use markov::Chain;
-use tracing::info;
+use serde::Serialize;
 use tracing_subscriber::fmt::format::FmtSpan;
 
 fn main() {
@@ -26,18 +26,23 @@ fn main() {
   //thus skewing the results by decreasing the chances of End token appearing
   records.retain(|r| r.lyrics.len() <= 3000);
 
-  let mut chain = Chain::<StructureToken>::of_order(1);
+  let mut dataset = vec![];
   for record in records {
-    let structure = LyricsParser::get_structure(&record.lyrics);
+    let data = LyricsParser::parse(&record.lyrics);
+
     //removing songs with overly detailed structure / or structure that contain a lot of pre-chorus post-chorus etc..
-    if structure.len() == 2 || structure.len() > 8 {
+    if data.structure.len() == 2 || data.structure.len() > 8 {
       continue;
     }
 
-    chain.feed(structure);
+    dataset.push(data);
   }
 
-  for (i, structure) in chain.iter_for(10).enumerate() {
-    info!("CHAIN {}: {:?}", i + 1, structure);
-  }
+  let mut song = Song::new();
+  song.train(dataset);
+
+  println!("{}", song.generate());
+
+  // let save = serde_yaml::to_string(&song).expect("LOL");
+  // std::fs::write("test.yaml", save).expect("lul");
 }
