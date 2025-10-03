@@ -8,9 +8,9 @@ use crate::dataset_parser::{parser_error::ParserError, Record};
 
 #[derive(Debug)]
 pub struct ParserOptions {
-  path: String,
-  language_preference: Option<String>,
-  tag_preference: Option<String>,
+  pub path: String,
+  pub language_preference: Option<String>,
+  pub tag_preference: Option<String>,
 }
 
 impl Default for ParserOptions {
