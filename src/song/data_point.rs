@@ -8,20 +8,32 @@ pub struct DataPoint {
   pub bridges: Vec<Vec<String>>,
   pub verses: Vec<Vec<String>>,
   pub chorus: Vec<String>,
+  pub unmarked: Vec<Vec<String>>,
 }
 
 impl DataPoint {
   pub fn add_block(&mut self, block: &str, flow: StructureToken) {
     use StructureToken::*;
+    let block_words: Vec<String> = block
+      .split(' ')
+      .map(|str| str.to_string())
+      .collect();
+
+    if block_words.len() == 0 {
+      return;
+    }
+
     match flow {
-      Intro(_) => self.intros.push(block.split(' ').map(|str| str.to_string()).collect()),
-      Outro(_) => self.outros.push(block.split(' ').map(|str| str.to_string()).collect()),
-      Bridge(_) => self.bridges.push(block.split(' ').map(|str| str.to_string()).collect()),
-      Verse(_) => self.verses.push(block.split(' ').map(|str| str.to_string()).collect()),
+      Intro(_) => self.intros.push(block_words),
+      Outro(_) => self.outros.push(block_words),
+      Bridge(_) => self.bridges.push(block_words),
+      Verse(_) => self.verses.push(block_words),
       Chorus(_) => {
-        self.chorus = block.split(' ').map(|str| str.to_string()).collect();
+        if self.chorus.is_empty() {
+          self.chorus = block_words
+        }
       }
-      _ => {}
+      _ => self.unmarked.push(block_words),
     }
   }
 }

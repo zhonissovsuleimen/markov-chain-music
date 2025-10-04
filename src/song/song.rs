@@ -10,13 +10,14 @@ pub struct Song {
   bridge: Chain<String>,
   chorus: Chain<String>,
   verse: Chain<String>,
+  unmarked: Chain<String>,
 }
 
 impl Song {
   pub fn new() -> Song {
     Song::of_order(1)
   }
-  
+
   pub fn of_order(order: usize) -> Song {
     Song {
       structure: Chain::of_order(order),
@@ -25,9 +26,9 @@ impl Song {
       bridge: Chain::of_order(order),
       chorus: Chain::of_order(order),
       verse: Chain::of_order(order),
+      unmarked: Chain::of_order(order),
     }
   }
-
 
   pub fn train(&mut self, dataset: Vec<DataPoint>) {
     for data in dataset {
@@ -54,30 +55,22 @@ impl Song {
     let structure = self.structure.generate();
     let chorus = self.chorus.generate().join(" ");
 
-    for token in structure {
+    use StructureToken::*;
+    for token in structure.clone() {
+      let block = match token {
+        Intro(_) if !self.intro.is_empty() => self.intro.generate().join(" "),
+        Outro(_) if !self.outro.is_empty() => self.outro.generate().join(" "),
+        Bridge(_) if !self.bridge.is_empty() => self.bridge.generate().join(" "),
+        Chorus(_) if !self.chorus.is_empty() => chorus.clone(),
+        Verse(_) if !self.verse.is_empty() => self.verse.generate().join(" "),
+        _ if !self.unmarked.is_empty() => self.unmarked.generate().join(" "),
+        _ => "".to_string(),
+      };
 
-      let block;
-      match token {
-        StructureToken::Intro(_) => {
-          block = self.intro.generate().join(" ");
-        },
-        StructureToken::Outro(_) => {
-          block = self.outro.generate().join(" ");
-        },
-        StructureToken::Bridge(_) => {
-          block = self.bridge.generate().join(" ");
-        },
-        StructureToken::Chorus(_) => {
-          block = chorus.clone();
-        },
-        StructureToken::Verse(_) => {
-          block = self.verse.generate().join(" ");
-        },
-        _ => continue,
+      if !block.is_empty() {
+        song.push_str(&block);
+        song.push_str("\n");
       }
-
-      song.push_str(&block);
-      song.push_str("\n");
     }
 
     song

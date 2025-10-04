@@ -1,6 +1,6 @@
 use csv::ReaderBuilder;
 use tracing::instrument;
-use crate::dataset_parser::{parser_error::ParserError, Record};
+use crate::dataset_parser::{parser_error::DatasetParserError, Record};
 
 //Parser for dataset:
 //https://huggingface.co/datasets/sebastiandizon/genius-song-lyrics
@@ -23,11 +23,11 @@ impl Default for ParserOptions {
   }
 }
 
-pub struct Parser;
+pub struct DatasetParser;
 
-impl Parser {
+impl DatasetParser {
   #[instrument(skip(options))]
-  pub fn parse(options: ParserOptions) -> Result<Vec<Record>, ParserError> {
+  pub fn parse(options: ParserOptions) -> Result<Vec<Record>, DatasetParserError> {
     use std::fs::File;
     let file = File::open(options.path)?;
     let mut csv_reader = ReaderBuilder::new().from_reader(file);

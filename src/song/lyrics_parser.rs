@@ -4,54 +4,87 @@ pub struct LyricsParser;
 
 impl LyricsParser {
   pub fn parse(lyrics: &str) -> DataPoint {
-    let mut lyrics = lyrics.replace("\\n", "\n");
-    let mut chars = lyrics.chars().collect::<Vec<char>>();
+    use StructureToken::*;
 
-    let mut i = 1;
-    while i < chars.len() {
-      if chars[i].is_uppercase() && chars[i - 1].is_lowercase() {
-        chars.insert(i, ' ');
-      }
-      i += 1;
-    }
-    lyrics = chars.iter().collect::<String>();
+    let lyrics = clean(lyrics);
 
     let mut output = DataPoint::default();
     output.structure.push(StructureToken::Start);
 
     let mut block = String::new();
-    let mut flow = StructureToken::Start;
     for line in lyrics.lines() {
       if line.starts_with('[') {
-        let parsed_line = line.replace(|c: char| c.is_ascii_punctuation(), " ");
-        let split: Vec<String> = parsed_line
-          .split(' ')
-          .map(|str| str.to_lowercase())
-          .collect();
-
-        output.add_block(&block, flow.clone());
+        let i = output.structure.len();
+        let check = line.to_lowercase();
 
         //order matters
-        let i = output.structure.len();
-        if split.contains(&"chorus".to_string()) {
-          flow = StructureToken::Chorus(i);
-        } else if split.contains(&"verse".to_string()) {
-          flow = StructureToken::Verse(i);
-        } else if split.contains(&"intro".to_string()) {
-          flow = StructureToken::Intro(i);
-        } else if split.contains(&"outro".to_string()) {
-          flow = StructureToken::Outro(i);
-        } else if split.contains(&"bridge".to_string()) {
-          flow = StructureToken::Bridge(i);
+        if check.contains(&"chorus".to_string()) {
+          output.structure.push(Chorus(i));
+        } else if check.contains(&"verse".to_string()) {
+          output.structure.push(Verse(i));
+        } else if check.contains(&"intro".to_string()) {
+          output.structure.push(Intro(i));
+        } else if check.contains(&"outro".to_string()) {
+          output.structure.push(Outro(i));
+        } else if check.contains(&"bridge".to_string()) {
+          output.structure.push(Bridge(i));
+        } else {
+          continue;
         }
 
-        output.structure.push(flow.clone());
-      } else {
-        block.push_str(line);
+        if !block.is_empty() {
+          match output.structure.get(output.structure.len() - 2) {
+            Some(token) => output.add_block(&block, token.clone()),
+            None => output.add_block(&block, Start),
+          }
+        }
+      } else if !line.trim().is_empty() {
+        block.push_str(&line);
+        block.push_str("\n");
       }
     }
 
+    if !block.is_empty() {
+      match output.structure.get(output.structure.len() - 2) {
+        Some(token) => output.add_block(&block, token.clone()),
+        None => output.add_block(&block, Start),
+      }
+    }
     output.structure.push(StructureToken::End);
+
     output
   }
+}
+
+fn clean(lyrics: &str) -> String {
+  let mut chars = lyrics.chars().collect::<Vec<char>>();
+
+  let mut i = 1;
+  while i < chars.len() {
+    if chars[i].is_uppercase() && chars[i - 1].is_lowercase() {
+      chars.insert(i, '\n');
+      i += 2;
+    }
+    i += 1;
+  }
+
+  let mut lyrics: String = chars.iter().collect();
+
+  lyrics = lyrics
+    .replace("\\n", "\n")
+    .lines()
+    .filter(|line| !line.is_empty() && line.contains(char::is_alphanumeric))
+    .collect::<Vec<&str>>()
+    .join("\n");
+
+  let allowed_punctuation = ['\'', '[', ']'];
+  let allowed_whitespace = ['\n', ' '];
+  lyrics = lyrics
+    .chars()
+    .filter(|&c| {
+      c.is_alphanumeric() || allowed_punctuation.contains(&c) || allowed_whitespace.contains(&c)
+    })
+    .collect();
+
+  lyrics
 }

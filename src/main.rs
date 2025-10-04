@@ -2,11 +2,9 @@ mod dataset_parser;
 mod song;
 
 use crate::{
-  dataset_parser::{Parser, ParserOptions},
+  dataset_parser::{DatasetParser, ParserOptions},
   song::{LyricsParser, Song},
 };
-use markov::Chain;
-use serde::Serialize;
 use tracing_subscriber::fmt::format::FmtSpan;
 
 fn main() {
@@ -15,7 +13,7 @@ fn main() {
     .with_span_events(FmtSpan::CLOSE)
     .init();
 
-  let mut records = Parser::parse(ParserOptions {
+  let mut records = DatasetParser::parse(ParserOptions {
     language_preference: Some(String::from("en")),
     ..Default::default()
   })
@@ -28,21 +26,17 @@ fn main() {
 
   let mut dataset = vec![];
   for record in records {
-    let data = LyricsParser::parse(&record.lyrics);
+    let datapoint = LyricsParser::parse(&record.lyrics);
 
     //removing songs with overly detailed structure / or structure that contain a lot of pre-chorus post-chorus etc..
-    if data.structure.len() == 2 || data.structure.len() > 8 {
+    if datapoint.structure.len() == 2 || datapoint.structure.len() > 8 {
       continue;
     }
-
-    dataset.push(data);
+    dataset.push(datapoint);
   }
 
   let mut song = Song::new();
   song.train(dataset);
 
-  println!("{}", song.generate());
-
-  // let save = serde_yaml::to_string(&song).expect("LOL");
-  // std::fs::write("test.yaml", save).expect("lul");
+  println!("{}", song.generate())
 }
